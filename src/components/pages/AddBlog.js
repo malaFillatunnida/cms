@@ -5,8 +5,53 @@ import { useHistory } from "react-router-dom";
 import { Card, Form, Col, Button, Row } from "react-bootstrap";
 import SideBar from "../SideBar.js";
 import NavBar from "../NavBar.js";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
+import { EditorState, convertToRaw } from "draft-js";
+import { Editor } from "react-draft-wysiwyg";
+import draftToHtml from "draftjs-to-html";
 
 const AddBlog = () => {
+  // let history = useHistory();
+  const [userInfo, setuserInfo] = useState({
+    title: "",
+  });
+  const onChangeValue = (e) => {
+    setuserInfo({
+      ...userInfo,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  let editorState = EditorState.createEmpty();
+  const [description, setDescription] = useState(editorState);
+  const onEditorStateChange = (editorState) => {
+    setDescription(editorState);
+  };
+
+  const [isError, setError] = useState(null);
+  const addDetails = async (event) => {
+    try {
+      event.preventDefault();
+      event.persist();
+      if (userInfo.description.value.length < 50) {
+        setError("Required, Add description minimum length 50 characters");
+        return;
+      }
+      axios
+        .post(`http://localhost:2020/api/post/`, {
+          title: userInfo.title,
+          description: userInfo.description.value,
+        })
+        .then((res) => {
+          if (res.data.success === true) {
+            history.push("/Posts");
+          }
+        });
+    } catch (error) {
+      throw error;
+    }
+  };
+
   window.addEventListener("DOMContentLoaded", (event) => {
     const sidebarToggle = document.body.querySelector("#sidebarToggle");
     if (sidebarToggle) {
@@ -19,7 +64,7 @@ const AddBlog = () => {
 
   const [title, setTitle] = useState("");
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  // const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
   const [token, setToken] = useState("");
   const [expire, setExpire] = useState("");
@@ -192,7 +237,7 @@ const AddBlog = () => {
                   Isi Konten
                 </Form.Label>
                 <Col sm="10">
-                  <Form.Control
+                  {/* <Form.Control
                     type="text"
                     as="textarea"
                     rows={3}
@@ -201,7 +246,57 @@ const AddBlog = () => {
                     required
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                  />
+                  /> */}
+                  <form onSubmit={addDetails} className="update__forms">
+                    {/* <h3 className="myaccount-content"> Add </h3> */}
+                    <div className="form-row">
+                      <div className="form-group col-md-12">
+                        {/* <label className="font-weight-bold">
+                          Title <span className="required"> * </span>
+                        </label> */}
+                        {/* <input
+                          type="text"
+                          name="title"
+                          value={userInfo.title}
+                          onChange={onChangeValue}
+                          className="form-control"
+                          placeholder="Title"
+                          required
+                        /> */}
+                      </div>
+                      <div className="form-group col-md-12 editor">
+                        {/* <label className="font-weight-bold">
+                          Description <span className="required"> * </span>
+                        </label> */}
+                        <Editor
+                          editorState={description}
+                          toolbarClassName="toolbarClassName"
+                          wrapperClassName="wrapperClassName"
+                          editorClassName="editorClassName"
+                          onEditorStateChange={onEditorStateChange}
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Tambahankan Isi Konten..."
+                        />
+                        <textarea
+                          style={{ display: "none" }}
+                          disabled
+                          ref={(val) => (userInfo.description = val)}
+                          value={draftToHtml(
+                            convertToRaw(description.getCurrentContent())
+                          )}
+                        />
+                      </div>
+                      {isError !== null && (
+                        <div className="errors"> {isError} </div>
+                      )}
+                      {/* <div className="form-group col-sm-12 text-right">
+                        <button type="submit" className="btn btn__theme">
+                          Submit
+                        </button>
+                      </div> */}
+                    </div>
+                  </form>
                 </Col>
               </Form.Group>
 
